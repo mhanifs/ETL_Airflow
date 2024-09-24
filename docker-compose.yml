@@ -1,0 +1,196 @@
+
+# x-airflow-common:
+#   &airflow-common
+#   build:
+#     context: .
+#     dockerfile: Dockerfile
+#   environment:
+#     &airflow-common-env
+#     AIRFLOW__CORE__SQL_ALCHEMY_CONN: sqlite:////usr/local/airflow/db/airflow.db
+#     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+#     JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
+#     SPARK_HOME: /mnt/c/users/slim3/Spark/spark-3.5.2-bin-hadoop3
+#   volumes:
+#     - ./dags:/opt/airflow/dags
+#     - ./logs:/opt/airflow/logs
+#     - ./plugins:/opt/airflow/plugins bo
+#     - ./db:/usr/local/airflow/db
+#     - ./raw_data:/opt/airflow/raw_data
+#     - ./processed_data:/opt/airflow/processed_data
+#     - '/tmp:/tmp'
+#   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
+
+# services:
+#   airflow-init:
+#     <<: *airflow-common
+#     entrypoint: /bin/bash -c "/bin/bash -c \"$${@}\""
+#     command: |
+#       /bin/bash -c "
+#         airflow db init
+#         airflow db upgrade
+#         airflow users create -r Admin -u admin -e airflow@airflow.com -f admin -l user -p airflow
+#       "
+#     environment:
+#       <<: *airflow-common-env
+
+#   airflow-scheduler:
+#     <<: *airflow-common
+#     command: scheduler
+#     environment:
+#       <<: *airflow-common-env
+#     restart: always
+
+#   airflow-webserver:
+#     <<: *airflow-common
+#     command: webserver
+#     ports:
+#       - 8081:8080
+#     healthcheck:
+#       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+#       interval: 10s
+#       timeout: 10s
+#       retries: 5
+#     restart: always
+#     environment:
+#       <<: *airflow-common-env
+
+
+# x-airflow-common:
+#   &airflow-common
+#   image: apache/airflow:2.5.1
+#   environment:
+#     &airflow-common-env
+#     AIRFLOW__CORE__EXECUTOR: LocalExecutor
+#     AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+#     AIRFLOW__CORE__FERNET_KEY: C0XK8ODYfZCPTAOHzy7pB1hu9oSZspqQ0gfI5dAFNDU=
+#     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+#     JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
+#     SPARK_HOME: /mnt/c/users/slim3/Spark/spark-3.5.2-bin-hadoop3
+#   volumes:
+#     - ./dags:/opt/airflow/dags
+#     - ./logs:/opt/airflow/logs
+#     - ./plugins:/opt/airflow/plugins
+#     - ./raw_data:/opt/airflow/raw_data
+#     - ./processed_data:/opt/airflow/processed_data
+#     - '/tmp:/tmp'
+#   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
+
+# services:
+#   postgres:
+#     image: postgres:13
+#     environment:
+#       POSTGRES_USER: airflow
+#       POSTGRES_PASSWORD: airflow
+#       POSTGRES_DB: airflow
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     restart: always
+
+#   airflow-init:
+#     <<: *airflow-common
+#     entrypoint: /bin/bash -c "$@"
+#     command: |
+#       airflow db init &&
+#       airflow db upgrade &&
+#       airflow users create -r Admin -u admin -e airflow@airflow.com -f admin -l user -p airflow
+#     environment:
+#       <<: *airflow-common-env
+#     depends_on:
+#       - postgres
+
+#   airflow-scheduler:
+#     <<: *airflow-common
+#     command: scheduler
+#     environment:
+#       <<: *airflow-common-env
+#     restart: always
+#     depends_on:
+#       - postgres
+
+#   airflow-webserver:
+#     <<: *airflow-common
+#     command: webserver
+#     ports:
+#       - 8081:8080
+#     healthcheck:
+#       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+#       interval: 10s
+#       timeout: 10s
+#       retries: 5
+#     restart: always
+#     depends_on:
+#       - postgres
+#     environment:
+#       <<: *airflow-common-env
+
+# volumes:
+#   postgres_data:
+
+
+x-airflow-common:
+  &airflow-common
+  build:
+    context: .
+    dockerfile: Dockerfile  # Use your Dockerfile for building the image
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: C0XK8ODYfZCPTAOHzy7pB1hu9oSZspqQ0gfI5dAFNDU= 
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
+    SPARK_HOME: /opt/spark
+  # Updated for WSL2 path
+  volumes:
+    - /home/hanif/Airflow_Pyspark/dags:/opt/airflow/dags  # Updated for WSL2
+    - /home/hanif/Airflow_Pyspark/logs:/opt/airflow/logs  # Updated for WSL2
+    - /home/hanif/Airflow_Pyspark/plugins:/opt/airflow/plugins  # Updated for WSL2
+    - /home/hanif/Airflow_Pyspark/raw_data:/opt/airflow/raw_data  # Updated for WSL2
+    - /home/hanif/Airflow_Pyspark/processed_data:/opt/airflow/processed_data  # Updated for WSL2
+    - '/tmp:/tmp'
+  user: "${AIRFLOW_UID:-0}:${AIRFLOW_GID:-50000}"
+
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash -c "$@"
+    command: |
+      airflow db init &&
+      airflow db upgrade &&
+      airflow users create -r Admin -u admin -e airflow@airflow.com -f admin -l user -p airflow
+    depends_on:
+      - postgres
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: always
+    depends_on:
+      - postgres
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - 8081:8080
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
